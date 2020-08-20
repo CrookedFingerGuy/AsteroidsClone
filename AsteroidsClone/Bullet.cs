@@ -24,7 +24,7 @@ namespace AsteroidsClone
 
         public void Draw(RenderTarget D2DRT,SolidColorBrush scb)
         {
-            D2DRT.DrawLine(new Vector2(X,Y),new Vector2(X+direction.X*4,(Y+direction.Y*4)),scb);
+            D2DRT.DrawLine(new Vector2(X,Y),new Vector2(X+direction.X*10,(Y+direction.Y*10)),scb);
         }
 
         public void Update()

@@ -21,7 +21,10 @@ namespace AsteroidsClone
             X = x;
             Y = y;
             velocity = new Vector2(0.0f);
+
+            //rotation speed is in radians
             rotationSpeed = 0.0f;
+            //unit vector of the direction the ship is pointed
             direction = new Vector2(0.0f, 1.0f);
         }
 
@@ -32,27 +35,27 @@ namespace AsteroidsClone
             //Ship Front
             sink.BeginFigure(new Vector2((float)X + direction.X * 20, (float)Y - direction.Y * 20), FigureBegin.Hollow);
 
-            //Calculating Ship Right Wing
+            //Calculating Ship Right Wing by rotating unit vector 90 degrees
             float rwX= (float)(direction.X * 0 - direction.Y * -1);
             float rwY = (float)(direction.X * 1 + direction.Y * 0);
-
             sink.AddLine(new Vector2(X +  rwX*7, Y + rwY*7));
-            //sink.AddLine(new Vector2(X + 7, Y));
 
+            //Calculating Ship Left Wing by rotating unit vector 270 degrees
             float lwX = (float)(direction.X * 0 - direction.Y * 1);
             float lwY = (float)(direction.X * -1 + direction.Y * 0);
-
-
-            sink.AddLine(new Vector2(X + 7*lwX, Y-rwY*7));
+            sink.AddLine(new Vector2(X + lwX*7, Y-rwY*7));
 
             sink.EndFigure(FigureEnd.Closed);
             sink.Close();
             D2DRT.DrawGeometry(shape, scb, 1f);
-            //D2DRT.DrawLine(new Vector2(X, Y),new Vector2( X + direction.X * 20, Y - direction.Y * 20),scb);
+
+            //draw a line that is 10 times the length of the unit vector ship.direction
+            D2DRT.DrawLine(new Vector2(X, Y),new Vector2( X + direction.X * 10, Y - direction.Y * 10),scb);
         }
 
         public void UpdateRotation()
         {
+            //Rotate ship by rotationSpeed radians.
             float rX = (float)(direction.X * Math.Cos(rotationSpeed) - direction.Y * Math.Sin(rotationSpeed));
             float rY = (float)(direction.X * Math.Sin(rotationSpeed) + direction.Y * Math.Cos(rotationSpeed));
             direction.X = rX;
@@ -60,10 +63,20 @@ namespace AsteroidsClone
 
             rotationSpeed = 0.0f;
         }
-        public void UpdateSpeed()
+        public void UpdateSpeed(int screenWidth, int screenHeight)
         {
             X += (int)(velocity.X);
             Y -= (int)(velocity.Y);
+
+            if (X < -25)
+                X = screenWidth + 25;
+            else if (X > screenWidth + 25)
+                X = -25;
+
+            if (Y < -25)
+                Y = screenHeight + 25;
+            else if (Y > screenHeight + 25)
+                Y = -25;
         }
     }
 }

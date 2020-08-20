@@ -48,11 +48,13 @@ namespace AsteroidsClone
         TextFormat TestTextFormat;
         RawRectangleF TestTextArea;
         Bitmap Background;
+        Random rand;
 
         int screenWidth=1024;
         int screenHeight=768;
         Ship ship;
         List<Bullet> bullets;
+        List<Asteroid> asteroids;
 
         public RForm(string text) : base(text)
         {
@@ -86,9 +88,18 @@ namespace AsteroidsClone
             userInputProcessor = new UserInputProcessor();
             TestTextFormat = new SharpDX.DirectWrite.TextFormat(new SharpDX.DirectWrite.Factory(SharpDX.DirectWrite.FactoryType.Isolated), "Gill Sans", FontWeight.UltraBold, FontStyle.Normal, 36);
             TestTextArea = new SharpDX.Mathematics.Interop.RawRectangleF(10, 10, 400, 400);
+            rand = new Random();
+
 
             ship = new Ship(screenWidth / 2, screenHeight / 2);
             bullets = new List<Bullet>();
+            asteroids = new List<Asteroid>();
+
+            int count = rand.Next(5, 10);
+            for (int i = 0; i < count; i++)
+            {
+                asteroids.Add(new Asteroid(rand.Next(-25,screenWidth+25), rand.Next(-25, screenWidth + 25), rand.Next(1,4)*10, rand));
+            }
 
             gameInputTimer = new Stopwatch();
             gameInputTimer.Start();
@@ -110,6 +121,11 @@ namespace AsteroidsClone
                 b.Draw(d2dRenderTarget, solidColorBrush);
             }
 
+            foreach (Asteroid asteoid in asteroids)
+            { 
+                asteoid.DrawAsteroid(d2dRenderTarget, d2dFactory, solidColorBrush);
+            }
+
 
             if (gameInputTimer.ElapsedMilliseconds >= 25)
             {
@@ -117,22 +133,16 @@ namespace AsteroidsClone
                 gamePadState = userInputProcessor.GetGamePadState();
                 gameInputTimer.Restart();
                 HandleInputs();
-                ship.UpdateSpeed();
+                ship.UpdateSpeed(screenWidth,screenHeight);
                 foreach(Bullet b in bullets)
                 {
                     b.Update();
                 }
 
-                if(bulletLimiter==10)
+                for(int i=0;i<asteroids.Count;i++)
                 {
-                    if (keys.PressedKeys.Contains(Key.Space))
-                    {
-                        bullets.Add(new Bullet((int)(ship.X+ship.direction.X*20), (int)(ship.Y - ship.direction.Y * 20), ship.direction));
-                    }
-                    bulletLimiter = 0;
+                    asteroids[i]=asteroids[i].Update(screenWidth,screenHeight);
                 }
-
-                bulletLimiter++;
             }            
 
             d2dRenderTarget.EndDraw();
@@ -143,6 +153,7 @@ namespace AsteroidsClone
         void HandleInputs()
         {
             keys = keyboard.GetCurrentState();
+
 
             if (keys.PressedKeys.Contains(Key.Up))
             {
@@ -169,6 +180,41 @@ namespace AsteroidsClone
                 ship.UpdateRotation();
             }
 
+            if (bulletLimiter == 10)
+            {
+                if (keys.PressedKeys.Contains(Key.Space))
+                {
+                    bullets.Add(new Bullet((int)(ship.X + ship.direction.X * 20), (int)(ship.Y - ship.direction.Y * 20), ship.direction));
+                }
+                bulletLimiter = 0;
+                if (keys.PressedKeys.Contains(Key.Return))
+                {
+                    List<Asteroid> tempAs = new List<Asteroid>();
+                    Asteroid toDelete;
+                    foreach (Asteroid asteroid in asteroids)
+                    {
+                        if (asteroid.size > 10)
+                        {
+                            tempAs = asteroid.BreakupAsteroid();
+                        }
+                        else
+                        {
+                            toDelete = asteroid;
+                        }
+                    }
+
+                    if (tempAs.Count > 0)
+                    {
+                        foreach (Asteroid a in tempAs)
+                        {
+                            asteroids.Add(a);
+                        }
+                        asteroids.Remove(asteroids[0]);
+                    }
+
+                }
+            }
+            bulletLimiter++;
         }
 
         ~RForm()
