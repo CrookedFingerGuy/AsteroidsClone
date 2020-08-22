@@ -13,7 +13,7 @@ namespace AsteroidsClone
     {
         public int X { get; set; }
         public int Y { get; set; }
-        public float size { get; set; }
+        public int size { get; set; }
         public float speed { get; set; }
         public float rotationSpeed;
         public Vector2 direction;
@@ -22,7 +22,7 @@ namespace AsteroidsClone
         Random rand;
 
 
-        public Asteroid(int x,int y, int s,Random r)
+        public Asteroid(int x,int y, int s,Random r,Factory fact)
         {
             rand = r;
             X = x;
@@ -30,18 +30,18 @@ namespace AsteroidsClone
             rotationSpeed = 0f;
             speed = (float)(rand.NextDouble()+0.5f)*5;
             direction = new Vector2(1f, 0f);
-            direction = RotatePointArroundXY((float)(rand.NextDouble() * 2 * Math.PI));
+            direction = RotatePointArroundXY(direction,(float)(rand.NextDouble() * 2 * Math.PI));
             numberOfPoints = 10;
             size = s;
             points = new List<Vector2>();
             Vector2 temp;
             Vector2 unitAtAsteroid;
-            
 
-            for(int i =0;i<numberOfPoints;i++)
+
+            for (int i =0;i<numberOfPoints;i++)
             {
                 float tempMagnitude = (float)(rand.NextDouble() +0.5f)* size;
-                temp = RotatePointArroundXY(Map(i,0,numberOfPoints,0,(float)(2*Math.PI)));                
+                temp = RotatePointArroundXY(direction,Map(i,0,numberOfPoints,0,(float)(2*Math.PI)));                
                 temp.X *= tempMagnitude;
                 temp.Y *= tempMagnitude;
                 points.Add(temp);
@@ -50,7 +50,7 @@ namespace AsteroidsClone
         }
 
 
-        public void DrawAsteroid(RenderTarget D2DRT,Factory fact,SolidColorBrush scb)
+        public void DrawAsteroid(RenderTarget D2DRT,SolidColorBrush scb,Factory fact)
         {
             PathGeometry shape = new PathGeometry(fact);
             GeometrySink sink = shape.Open();
@@ -59,21 +59,22 @@ namespace AsteroidsClone
             tempPoint.X += X;
             tempPoint.Y += Y;
             sink.BeginFigure(tempPoint, FigureBegin.Hollow);
-            foreach(Vector2 p in points)
+            foreach (Vector2 p in points)
             {
                 tempPoint = p;
                 tempPoint.X += X;
                 tempPoint.Y += Y;
                 sink.AddLine(tempPoint);
             }
-
             sink.EndFigure(FigureEnd.Closed);
             sink.Close();
-            D2DRT.DrawGeometry(shape, scb, 1f);
 
+            D2DRT.DrawGeometry(shape, scb, 1.0f);
+            shape.Dispose();
+            sink.Dispose(); 
         }
 
-        public Asteroid Update(int screenWidth,int screenHeight)
+        public Asteroid Update(int screenWidth,int screenHeight,Factory fact)
         {
             X += (int)(direction.X * speed);
             Y += (int)(direction.Y * speed);
@@ -81,33 +82,32 @@ namespace AsteroidsClone
             Asteroid tempA;
             if (X < -50)
             {
-                tempA = new Asteroid(rand.Next(0, 100) - 100, rand.Next(0, screenHeight), rand.Next(1, 4) * 10, rand);
+                tempA = new Asteroid(rand.Next(0, 100) - 100, rand.Next(0, screenHeight),size, rand,fact);
                 return tempA;
             }
             else if (X > screenWidth + 50)
             {
-                tempA = new Asteroid(rand.Next(0, 100) + screenWidth, rand.Next(0, screenHeight), rand.Next(1, 4) * 10, rand);
+                tempA = new Asteroid(rand.Next(0, 100) + screenWidth, rand.Next(0, screenHeight), size, rand, fact);
                 return tempA;
             }
 
             if (Y < -25)
             {
-                tempA = new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100)-100, rand.Next(1, 4) * 10, rand);
+                tempA = new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100)-100, size, rand, fact);
                 return tempA;
             }
             else if (Y > screenHeight + 50)
             {
-                tempA = new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100) +screenHeight, rand.Next(1, 4) * 10, rand);
+                tempA = new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100) +screenHeight, size, rand, fact);
                 return tempA;
             }
 
             return this;
         }
-        Vector2 RotatePointArroundXY(float rotation)
-        {
-            Vector2 value;
-            float rX = (float)(direction.X * Math.Cos(rotation) - direction.Y * Math.Sin(rotation));
-            float rY = (float)(direction.X * Math.Sin(rotation) + direction.Y * Math.Cos(rotation));
+        Vector2 RotatePointArroundXY(Vector2 value,float rotation)
+        {            
+            float rX = (float)(value.X * Math.Cos(rotation) - value.Y * Math.Sin(rotation));
+            float rY = (float)(value.X * Math.Sin(rotation) + value.Y * Math.Cos(rotation));
             value.X = rX;
             value.Y = rY;
             return value;
@@ -118,15 +118,17 @@ namespace AsteroidsClone
             return (value - fromSource) / (toSource - fromSource) * (toTarget - fromTarget) + fromTarget;
         }
 
-        public List<Asteroid> BreakupAsteroid()
+        public List<Asteroid> BreakupAsteroid(Factory fact)
         {
             List<Asteroid> tempAsteroids = new List<Asteroid>();
-            int count = rand.Next(2, 4);
-            for(int i=0;i<count;i++)
+            int count = rand.Next(2,4);
+            if (size > 15)
             {
-                tempAsteroids.Add(new Asteroid(X,Y,(int)size/2,rand));
+                for (int i = 0; i < count; i++)
+                {
+                    tempAsteroids.Add(new Asteroid(X, Y, (int)size / 2, rand, fact));
+                }
             }
-
             return tempAsteroids;
         }
 
