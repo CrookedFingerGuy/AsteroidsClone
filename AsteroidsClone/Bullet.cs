@@ -30,7 +30,7 @@ namespace AsteroidsClone
         public void Update()
         {
             X += (int)(direction.X * 15f);
-            Y += (int)(direction.Y * 15f);
-        }
+            Y += (int)(direction.Y * 15f);            
+        } 
     }
 }

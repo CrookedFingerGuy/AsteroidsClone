@@ -27,7 +27,7 @@ namespace AsteroidsClone
             rand = r;
             X = x;
             Y = y;
-            rotationSpeed = 0f;
+            rotationSpeed = (float)rand.NextDouble()/5;
             speed = (float)(rand.NextDouble()+0.5f)*5;
             direction = new Vector2(1f, 0f);
             direction = RotatePointArroundXY(direction,(float)(rand.NextDouble() * 2 * Math.PI));
@@ -36,7 +36,6 @@ namespace AsteroidsClone
             points = new List<Vector2>();
             Vector2 temp;
             Vector2 unitAtAsteroid;
-
 
             for (int i =0;i<numberOfPoints;i++)
             {
@@ -78,6 +77,11 @@ namespace AsteroidsClone
         {
             X += (int)(direction.X * speed);
             Y += (int)(direction.Y * speed);
+            
+            for(int i=0;i<points.Count;i++)
+            {
+                points[i] = RotatePointArroundXY(points[i], rotationSpeed);
+            }
 
             Asteroid tempA;
             if (X < -50)

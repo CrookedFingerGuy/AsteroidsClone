@@ -45,8 +45,11 @@ namespace AsteroidsClone
 
         UserInputProcessor userInputProcessor;
         Stopwatch gameInputTimer;
-        TextFormat TestTextFormat;
-        RawRectangleF TestTextArea;
+        TextFormat scoreTextFormat;
+        RawRectangleF scoreTextArea;
+        TextFormat gameOverTextFormat;
+        RawRectangleF gameOverTextArea;
+        RawRectangleF livesTextArea;
         Bitmap Background;
         Random rand;
 
@@ -55,6 +58,9 @@ namespace AsteroidsClone
         Ship ship;
         List<Bullet> bullets;
         List<Asteroid> asteroids;
+        int score = 0;
+        int lives = 3;
+        bool gameOver = false;
 
         public RForm(string text) : base(text)
         {
@@ -80,14 +86,19 @@ namespace AsteroidsClone
             surface = backBuffer.QueryInterface<Surface>();
             d2dRenderTarget = new RenderTarget(d2dFactory, surface, new RenderTargetProperties(new SharpDX.Direct2D1.PixelFormat(Format.Unknown, AlphaMode.Premultiplied)));
             solidColorBrush = new SolidColorBrush(d2dRenderTarget, Color.White);
-            solidColorBrush.Color = Color.Purple;
+            solidColorBrush.Color = Color.White;
             directInput = new DirectInput();
             keyboard = new Keyboard(directInput);
             keyboard.Properties.BufferSize = 128;
             keyboard.Acquire();
             userInputProcessor = new UserInputProcessor();
-            TestTextFormat = new SharpDX.DirectWrite.TextFormat(new SharpDX.DirectWrite.Factory(SharpDX.DirectWrite.FactoryType.Isolated), "Gill Sans", FontWeight.UltraBold, FontStyle.Normal, 36);
-            TestTextArea = new SharpDX.Mathematics.Interop.RawRectangleF(10, 10, 400, 400);
+            scoreTextFormat = new SharpDX.DirectWrite.TextFormat(new SharpDX.DirectWrite.Factory(SharpDX.DirectWrite.FactoryType.Isolated), "Gill Sans", FontWeight.UltraBold, FontStyle.Normal, 36);
+            scoreTextArea = new SharpDX.Mathematics.Interop.RawRectangleF(10, 10, 400, 400);
+            livesTextArea = new SharpDX.Mathematics.Interop.RawRectangleF(10,46,400,400);
+            gameOverTextFormat = new SharpDX.DirectWrite.TextFormat(new SharpDX.DirectWrite.Factory(SharpDX.DirectWrite.FactoryType.Isolated), "Gill Sans", FontWeight.UltraBold, FontStyle.Normal, 108);
+            gameOverTextArea = new SharpDX.Mathematics.Interop.RawRectangleF(0, 0, screenWidth, screenHeight);
+            gameOverTextFormat.ParagraphAlignment = SharpDX.DirectWrite.ParagraphAlignment.Center;
+            gameOverTextFormat.TextAlignment = SharpDX.DirectWrite.TextAlignment.Center; ;
             rand = new Random();
 
 
@@ -95,10 +106,10 @@ namespace AsteroidsClone
             bullets = new List<Bullet>();
             asteroids = new List<Asteroid>();
 
-            int count = rand.Next(5, 10);
+            int count = rand.Next(10, 15);
             for (int i = 0; i < count; i++)
             {
-                asteroids.Add(new Asteroid(rand.Next(-25,screenWidth+25), rand.Next(-25, screenWidth + 25), rand.Next(1,4)*10, rand));
+                asteroids.Add(new Asteroid(rand.Next(-25,screenWidth+25), rand.Next(-25, screenWidth + 25), rand.Next(1,4)*10, rand, d2dFactory));
             }
 
             gameInputTimer = new Stopwatch();
@@ -111,9 +122,9 @@ namespace AsteroidsClone
         {
             d2dRenderTarget.BeginDraw();
             d2dRenderTarget.Clear(Color.Black);
-            //d2dRenderTarget.DrawText("Test", TestTextFormat, TestTextArea, solidColorBrush);
-            //userInputProcessor.DisplayGamePadState(d2dRenderTarget, solidColorBrush);
 
+            d2dRenderTarget.DrawText(score.ToString(), scoreTextFormat, scoreTextArea, solidColorBrush);
+            d2dRenderTarget.DrawText("Lives: "+lives.ToString(), scoreTextFormat, livesTextArea, solidColorBrush);
 
             ship.DrawShip(d2dRenderTarget, solidColorBrush, d2dFactory);
             foreach(Bullet b in bullets)
@@ -123,27 +134,106 @@ namespace AsteroidsClone
 
             foreach (Asteroid asteoid in asteroids)
             { 
-                asteoid.DrawAsteroid(d2dRenderTarget, d2dFactory, solidColorBrush);
+                asteoid.DrawAsteroid(d2dRenderTarget, solidColorBrush,d2dFactory);
             }
 
-
-            if (gameInputTimer.ElapsedMilliseconds >= 25)
+            if(gameOver)
+            {
+                d2dRenderTarget.DrawText("Game Over", gameOverTextFormat, gameOverTextArea, solidColorBrush);
+            }
+            else if (gameInputTimer.ElapsedMilliseconds >= 25)
             {
                 userInputProcessor.oldPacketNumber = gamePadState.PacketNumber;
                 gamePadState = userInputProcessor.GetGamePadState();
                 gameInputTimer.Restart();
                 HandleInputs();
-                ship.UpdateSpeed(screenWidth,screenHeight);
-                foreach(Bullet b in bullets)
+                ship.UpdateSpeed(screenWidth, screenHeight);
+
+                for (int i = 0; i < asteroids.Count; i++)
                 {
-                    b.Update();
+                    for (int j = 0; j < ship.edgePoints.Count; j++)
+                    {
+                        Vector2 tempA = new Vector2(asteroids[i].X, asteroids[i].Y);
+                        Vector2 tempB = new Vector2(ship.edgePoints[j].X, ship.edgePoints[j].Y);
+                        if (Math.Sqrt(((tempA.X - tempB.X) * (tempA.X - tempB.X) + (tempA.Y - tempB.Y) * (tempA.Y - tempB.Y))) < asteroids[i].size)
+                        {
+                            lives--;
+                            if(lives==0)
+                                gameOver = true;
+                            ship = new Ship(screenWidth / 2, screenHeight / 2);
+                            break;
+                        }
+                    }
                 }
 
-                for(int i=0;i<asteroids.Count;i++)
+                Bullet toDelete=null;
+                foreach (Bullet b in bullets)
                 {
-                    asteroids[i]=asteroids[i].Update(screenWidth,screenHeight);
+                    b.Update();
+                    if (b.X < 0 || b.X > screenWidth || b.Y < 0 || b.Y > screenHeight)
+                        toDelete = b;
                 }
-            }            
+                if (toDelete != null)
+                    bullets.Remove(toDelete);
+
+                for (int i = 0; i < asteroids.Count; i++)
+                {
+                    asteroids[i] = asteroids[i].Update(screenWidth, screenHeight, d2dFactory);
+                }
+                 
+                for (int i = 0; i < asteroids.Count; i++)
+                {
+                    for (int j = 0; j < bullets.Count; j++)
+                    {
+                        Vector2 tempA = new Vector2(asteroids[i].X, asteroids[i].Y);
+                        Vector2 tempB = new Vector2(bullets[j].X, bullets[j].Y);
+                        if (Math.Sqrt(((tempA.X - tempB.X) * (tempA.X - tempB.X) + (tempA.Y - tempB.Y) * (tempA.Y - tempB.Y))) < asteroids[i].size)
+                        {
+                            score +=asteroids[i].size * 50;
+                            List<Asteroid> newAsteroids;
+                            newAsteroids = asteroids[i].BreakupAsteroid(d2dFactory);
+                            asteroids.Remove(asteroids[i]);
+                            foreach (Asteroid asteroid in newAsteroids)
+                            {
+                                asteroids.Add(asteroid);
+                            }
+                            bullets.Remove(bullets[j]);
+                            break;
+                        }
+                    }
+                }
+
+                if (asteroids.Count < 10)
+                {
+                    int count = rand.Next(1, 4);
+                    for (int i = 0; i < count; i++)
+                    {
+                        switch (count)
+                        {
+                            case 1:
+                                {
+                                    asteroids.Add(new Asteroid(rand.Next(0, 100) - 100, rand.Next(0, screenHeight), rand.Next(1, 4) * 10, rand, d2dFactory));
+                                }
+                                break;
+                            case 2:
+                                {
+                                    asteroids.Add(new Asteroid(rand.Next(0, 100) + screenWidth, rand.Next(0, screenHeight), rand.Next(1, 4) * 10, rand, d2dFactory));
+                                }
+                                break;
+                            case 3:
+                                {
+                                    asteroids.Add(new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100) - 100, rand.Next(1, 4) * 10, rand, d2dFactory));
+                                }
+                                break;
+                            case 4:
+                                {
+                                    asteroids.Add(new Asteroid(rand.Next(0, screenWidth), rand.Next(0, 100) + screenHeight, rand.Next(1, 4) * 10, rand, d2dFactory));
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
 
             d2dRenderTarget.EndDraw();
             swapChain.Present(0, PresentFlags.None);
@@ -170,13 +260,13 @@ namespace AsteroidsClone
 
             if (keys.PressedKeys.Contains(Key.Left))
             {
-                ship.rotationSpeed = 0.2f;
+                ship.rotationSpeed = 0.1f;
                 ship.UpdateRotation();
             }
 
             if (keys.PressedKeys.Contains(Key.Right))
             {
-                ship.rotationSpeed = -0.2f;
+                ship.rotationSpeed = -0.1f;
                 ship.UpdateRotation();
             }
 
@@ -195,7 +285,7 @@ namespace AsteroidsClone
                     {
                         if (asteroid.size > 10)
                         {
-                            tempAs = asteroid.BreakupAsteroid();
+                            tempAs = asteroid.BreakupAsteroid(d2dFactory);
                         }
                         else
                         {

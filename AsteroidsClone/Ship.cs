@@ -15,6 +15,7 @@ namespace AsteroidsClone
         public Vector2 velocity; //{ get; set; }
         public float rotationSpeed { get; set; }
         public Vector2 direction;
+        public List<Vector2> edgePoints;
 
         public Ship(int x,int y)
         {
@@ -26,10 +27,12 @@ namespace AsteroidsClone
             rotationSpeed = 0.0f;
             //unit vector of the direction the ship is pointed
             direction = new Vector2(0.0f, 1.0f);
+            edgePoints = new List<Vector2>();
         }
 
         public void DrawShip(RenderTarget D2DRT,SolidColorBrush scb,Factory d2dFactory)
         {
+
             PathGeometry shape = new PathGeometry(d2dFactory);
             GeometrySink sink = shape.Open();
             //Ship Front
@@ -51,6 +54,13 @@ namespace AsteroidsClone
 
             //draw a line that is 10 times the length of the unit vector ship.direction
             D2DRT.DrawLine(new Vector2(X, Y),new Vector2( X + direction.X * 10, Y - direction.Y * 10),scb);
+            edgePoints = new List<Vector2>();
+            edgePoints.Add(new Vector2((float)X + direction.X * 20, (float)(Y - direction.Y * 20)));
+            edgePoints.Add(new Vector2(X + lwX * 7, Y - rwY * 7)); 
+            edgePoints.Add(new Vector2(X + lwX * 7, Y - rwY * 7));
+
+            shape.Dispose();
+            sink.Dispose();
         }
 
         public void UpdateRotation()
