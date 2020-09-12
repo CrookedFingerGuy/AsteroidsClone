@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SharpDX.Windows;
 
 namespace AsteroidsClone
@@ -17,7 +13,6 @@ namespace AsteroidsClone
             RenderLoop.Run(rForm, () => rForm.rLoop());
 
             rForm.Dispose();
-
         }  
     }
 }

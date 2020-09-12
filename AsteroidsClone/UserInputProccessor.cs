@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharpDX;
-using SharpDX.Direct2D1;
+﻿using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using SharpDX.XInput;
@@ -15,7 +9,6 @@ namespace AsteroidsClone
     {
         TextFormat linesTextFormat;
         RawRectangleF linesTextArea;
-        string textForDebug = "Test";
         Controller[] controllers;
         Controller controller = null;
         public int oldPacketNumber;
@@ -44,13 +37,10 @@ namespace AsteroidsClone
         {
             if (controller == null)
             {
-                textForDebug = "No XInput controller installed";
+                //No Controller Found
             }
             else
             {
-
-                textForDebug = "Found a XInput controller available";
-
                 // Poll events from joystick
                 var state = controller.GetState();
                 d2dRT.DrawText("button pressed: " + state.Gamepad.ToString(), linesTextFormat, linesTextArea, brush);

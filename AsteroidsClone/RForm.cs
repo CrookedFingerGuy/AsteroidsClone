@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
@@ -39,7 +33,6 @@ namespace AsteroidsClone
         SolidColorBrush solidColorBrush;
         DirectInput directInput;
         Keyboard keyboard;
-        KeyboardUpdate[] keyData;
         KeyboardState keys;
         State gamePadState;
 
@@ -50,7 +43,6 @@ namespace AsteroidsClone
         TextFormat gameOverTextFormat;
         RawRectangleF gameOverTextArea;
         RawRectangleF livesTextArea;
-        Bitmap Background;
         Random rand;
 
         int screenWidth=1024;
